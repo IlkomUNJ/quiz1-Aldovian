@@ -3,11 +3,12 @@
 #include "bank_customer.h"
 #include "buyer.h"
 
-enum PrimaryPrompt { LOGIN, REGISTER, EXIT };
-
 using namespace std;
 
-vector<Buyer> buyers;
+enum PrimaryPrompt { LOGIN, REGISTER, EXIT };
+
+vector<BankCustomer*> bankAccounts;
+vector<Buyer*> buyers;
 int buyerCounter = 1;
 int bankCounter = 1;
 
@@ -16,10 +17,11 @@ int main() {
     Buyer* currentBuyer = nullptr;
 
     while (prompt != EXIT) {
-        cout << "Select an option: " << endl;
+        cout << "=== Main Menu ===" << endl;
         cout << "1. Login" << endl;
         cout << "2. Register" << endl;
         cout << "3. Exit" << endl;
+        cout << "Pilih: ";
         int choice;
         cin >> choice;
         prompt = static_cast<PrimaryPrompt>(choice - 1);
@@ -27,22 +29,24 @@ int main() {
         switch (prompt) {
         case LOGIN: {
             if (buyers.empty()) {
-                cout << "Belum ada akun. Silakan register dulu." << endl;
+                cout << "Belum ada akun. Silakan register dulu.\n" << endl;
                 break;
             }
             cout << "Masukkan nama untuk login: ";
             string nama;
             cin >> nama;
+
             bool found = false;
             for (auto& b : buyers) {
-                if (b.getName() == nama) {
-                    currentBuyer = &b;
+                if (b->getName() == nama) {
+                    currentBuyer = b;
                     found = true;
                     break;
                 }
             }
+
             if (!found) {
-                cout << "User tidak ditemukan." << endl;
+                cout << "User tidak ditemukan.\n" << endl;
                 break;
             }
 
@@ -50,84 +54,74 @@ int main() {
 
             // Sub menu Buyer
             int subChoice = 0;
-            while (subChoice != 5) {
+            while (subChoice != 4) {
                 cout << "\n=== Menu Buyer ===" << endl;
                 cout << "1. Cek Info Akun" << endl;
-                cout << "2. Buat Akun Bank" << endl;
-                cout << "3. Deposit" << endl;
-                cout << "4. Withdraw" << endl;
-                cout << "5. Logout" << endl;
+                cout << "2. Deposit" << endl;
+                cout << "3. Withdraw" << endl;
+                cout << "4. Logout" << endl;
+                cout << "Pilih: ";
                 cin >> subChoice;
 
                 switch (subChoice) {
                 case 1:
-                    currentBuyer->showBuyerInfo();
+                    currentBuyer->getAccount().printInfo();
                     break;
                 case 2: {
-                    if (currentBuyer->getBankAccount() != nullptr) {
-                        cout << "Sudah punya akun bank." << endl;
-                        break;
-                    }
-                    string address, phone, email;
-                    double initialDeposit;
-                    cout << "Alamat: "; cin >> address;
-                    cout << "HP: "; cin >> phone;
-                    cout << "Email: "; cin >> email;
-                    cout << "Deposit awal: "; cin >> initialDeposit;
-                    BankCustomer* acc = new BankCustomer(bankCounter++, currentBuyer->getName(), address, phone, email, initialDeposit);
-                    currentBuyer->linkBankAccount(acc);
+                    double amt;
+                    cout << "Jumlah deposit: ";
+                    cin >> amt;
+                    currentBuyer->getAccount().addBalance(amt);
                     break;
                 }
                 case 3: {
-                    if (currentBuyer->getBankAccount() == nullptr) {
-                        cout << "Belum punya akun bank!" << endl;
-                        break;
-                    }
                     double amt;
-                    cout << "Jumlah deposit: "; cin >> amt;
-                    currentBuyer->getBankAccount()->deposit(amt);
+                    cout << "Jumlah withdraw: ";
+                    cin >> amt;
+                    currentBuyer->getAccount().withdrawBalance(amt);
                     break;
                 }
-                case 4: {
-                    if (currentBuyer->getBankAccount() == nullptr) {
-                        cout << "Belum punya akun bank!" << endl;
-                        break;
-                    }
-                    double amt;
-                    cout << "Jumlah withdraw: "; cin >> amt;
-                    currentBuyer->getBankAccount()->withdraw(amt);
-                    break;
-                }
-                case 5:
-                    cout << "Logout berhasil." << endl;
+                case 4:
+                    cout << "Logout berhasil.\n" << endl;
                     break;
                 default:
                     cout << "Pilihan tidak valid." << endl;
                 }
             }
-
             break;
         }
 
         case REGISTER: {
             string nama;
+            double depositAwal;
+
             cout << "Masukkan nama: ";
             cin >> nama;
-            buyers.push_back(Buyer(buyerCounter++, nama));
-            cout << "Akun Buyer berhasil dibuat dengan nama: " << nama << endl;
+            cout << "Masukkan deposit awal: ";
+            cin >> depositAwal;
+
+            BankCustomer* acc = new BankCustomer(bankCounter++, nama, depositAwal);
+            bankAccounts.push_back(acc);
+
+            Buyer* newBuyer = new Buyer(buyerCounter++, nama, *acc);
+            buyers.push_back(newBuyer);
+
+            cout << "Akun Buyer berhasil dibuat dengan nama: " << nama << "\n" << endl;
             break;
         }
 
         case EXIT:
-            cout << "Exiting." << endl;
+            cout << "Exiting program." << endl;
             break;
 
         default:
-            cout << "Invalid option." << endl;
+            cout << "Pilihan tidak valid.\n" << endl;
             break;
         }
-        cout << endl;
     }
+
+    for (auto acc : bankAccounts) delete acc;
+    for (auto b : buyers) delete b;
 
     return 0;
 }
