@@ -1,97 +1,159 @@
 #include <iostream>
+#include <vector>
 #include "bank_customer.h"
 #include "buyer.h"
-
-enum PrimaryPrompt{LOGIN, REGISTER, EXIT};
-
+#include "seller.h"
 using namespace std;
 
+enum PrimaryPrompt { LOGIN, REGISTER, EXIT };
+
+vector<BankCustomer*> bankAccounts;
+vector<Buyer*> buyers;
+vector<Seller*> sellers;
+int buyerCounter = 1;
+int bankCounter = 1;
+int sellerCounter = 1;
+
 int main() {
-    //create a loop prompt 
     PrimaryPrompt prompt = LOGIN;
+    Buyer* currentBuyer = nullptr;
+    Seller* currentSeller = nullptr;
+
     while (prompt != EXIT) {
-        cout << "Select an option: " << endl;
-        cout << "1. Login" << endl;
-        cout << "2. Register" << endl;
-        cout << "3. Exit" << endl;
+        cout << "\n=== Main Menu ===\n";
+        cout << "1. Login sebagai Buyer\n";
+        cout << "2. Register Buyer\n";
+        cout << "3. Login sebagai Seller\n";
+        cout << "4. Exit\n";
+        cout << "Pilih: ";
+
         int choice;
         cin >> choice;
-        prompt = static_cast<PrimaryPrompt>(choice - 1);
-        switch (prompt) {
-            case LOGIN:
-                cout << "Login selected." << endl;
-                /* if Login is selected, based on authority then provide options:
-                assume user is logged in as Buyer for now
-                1. Chek Account Status (will display if user is Buyer or Seller or both and linked banking account status)
-                Will display Buyer, Seller and Banking Account details
-                2. Upgrade Account to Seller
-                Will prompt user to enter Seller details and create a Seller account linked to Buyer account
-                Will reject if a user dont have a banking account linked
-                3. Create Banking Account (if not already linked), will be replaced with banking functions
-                Must provides: initial deposit amount, Address, Phone number, Email
-                Banking functions will provides: Balance checking, Transaction History, Deposit, Withdraw
-                4. Browse Store Functionality
-                Will display all stores initially
-                Need to select a store to browse each store inventory
-                Will display all items in the store inventory
-                After selecting an item, will display item details and option to add to cart
-                After adding to cart, will notify user item is added to cart
-                5. Order Functionality
-                Will display all items in cart
-                Will provide option to remove item from cart
-                Will provide option to checkout
-                After checkout invoide will be generated (will go to payment functionality)
-                6. Payment Functionality
-                Will display all listed invoices
-                Pick an invoice to pay
-                Will display invoice details and total amount
-                Will provide option to pay invoice
-                Payment is done through confirmation dialogue
-                In confirmation dialogue, will display account balance as precursor
-                User will need to manually enter invoice id to pay
-                After paying balance will be redacted from buyer and added to the responding seller account
-                After payment, order status will be changed to paid
-                7. Logout (return to main menu)
-                Display confirmation dialogue
-                If confirmed, return to main menu
-                If not, return to Buyer menu
-                8. Delete Account (remove both Buyer and Seller account and relevant banking account)
-                Display confirmation dialogue
-                If confirmed, delete account and return to main menu
-                If not, return to Buyer menu
-                assume user is logged in as Seller for now
-                9. Check Inventory
-                10. Add Item to Inventory
-                11. Remove Item from Inventory
-                12. View Orders (will display all orders placed to this seller
-                Only orders with paid status will be listed
-                Order details will listing items, quantity, total amount, buyer details, order status (paid, cancelled, completed)
-                extra functions
-                9. Exit to main Menu
-                10. Exit Program
-                **/
+
+        if (choice == 4) { prompt = EXIT; break; }
+
+        switch (choice) {
+        case 1: {
+            string nama;
+            cout << "Masukkan nama Buyer: ";
+            cin >> nama;
+
+            for (auto& b : buyers) {
+                if (b->getName() == nama) {
+                    currentBuyer = b;
+                    cout << "Login berhasil sebagai Buyer: " << nama << endl;
+                    break;
+                }
+            }
+
+            if (!currentBuyer) {
+                cout << "Buyer tidak ditemukan!\n";
                 break;
-            case REGISTER:
-                cout << "Register selected." << endl;
-                /* if register is selected then went throuhh registration process:
-                1. Create a new Buyer Account
-                Must provides: Name, Home Address, Phone number, Email
-                2. Option to create a Seller Account (will be linked to Buyer account)
-                Must provides: Store Name, Store Address, Store Phone number, Store Email
-                After finished immediately logged in as Buyer/Seller
-                */
-                break;
-            case EXIT:
-                cout << "Exiting." << std::endl;
-                break;
-            default:
-                cout << "Invalid option." << endl;
-                break;
+            }
+
+            int sub;
+            do {
+                cout << "\n=== Menu Buyer ===\n";
+                cout << "1. Lihat Info Akun\n2. Deposit\n3. Withdraw\n4. Logout\nPilih: ";
+                cin >> sub;
+                switch (sub) {
+                    case 1: currentBuyer->getAccount().printInfo(); break;
+                    case 2: {
+                        double amt; cout << "Jumlah deposit: "; cin >> amt;
+                        currentBuyer->getAccount().addBalance(amt); break;
+                    }
+                    case 3: {
+                        double amt; cout << "Jumlah withdraw: "; cin >> amt;
+                        currentBuyer->getAccount().withdrawBalance(amt); break;
+                    }
+                }
+            } while (sub != 4);
+            currentBuyer = nullptr;
+            break;
         }
-        cout << endl;
+
+        case 2: {
+            string nama; double deposit;
+            cout << "Masukkan nama Buyer: ";
+            cin >> nama;
+            cout << "Deposit awal: ";
+            cin >> deposit;
+
+            auto* acc = new BankCustomer(bankCounter++, nama, deposit);
+            auto* newBuyer = new Buyer(buyerCounter++, nama, *acc);
+
+            bankAccounts.push_back(acc);
+            buyers.push_back(newBuyer);
+
+            cout << "Akun Buyer berhasil dibuat!\n";
+            break;
+        }
+
+        case 3: {
+            if (buyers.empty()) {
+                cout << "Buat akun Buyer dulu sebelum jadi Seller!\n";
+                break;
+            }
+            string nama;
+            cout << "Masukkan nama Buyer untuk jadi Seller: ";
+            cin >> nama;
+
+            Buyer* buyerFound = nullptr;
+            for (auto& b : buyers) {
+                if (b->getName() == nama) { buyerFound = b; break; }
+            }
+
+            if (!buyerFound) {
+                cout << "Buyer tidak ditemukan!\n";
+                break;
+            }
+
+            auto* newSeller = new Seller(*buyerFound, sellerCounter++, nama);
+            sellers.push_back(newSeller);
+            currentSeller = newSeller;
+            cout << "Login sebagai Seller berhasil!\n";
+
+            int sub;
+            do {
+                cout << "\n=== Menu Seller ===\n";
+                cout << "1. Tambah Item\n2. Lihat Inventori\n3. Update Item\n4. Logout\nPilih: ";
+                cin >> sub;
+
+                switch (sub) {
+                    case 1: {
+                        int id, qty; double price; string itemName;
+                        cout << "Nama item: "; cin >> itemName;
+                        cout << "ID: "; cin >> id;
+                        cout << "Stok: "; cin >> qty;
+                        cout << "Harga: "; cin >> price;
+                        currentSeller->addNewItem(id, itemName, qty, price);
+                        break;
+                    }
+                    case 2: currentSeller->showInventory(); break;
+                    case 3: {
+                        int id, qty; double price; string itemName;
+                        cout << "Masukkan ID item yang ingin diupdate: "; cin >> id;
+                        cout << "Nama baru: "; cin >> itemName;
+                        cout << "Stok baru: "; cin >> qty;
+                        cout << "Harga baru: "; cin >> price;
+                        currentSeller->updateItem(id, itemName, qty, price);
+                        break;
+                    }
+                }
+            } while (sub != 4);
+            currentSeller = nullptr;
+            break;
+        }
+
+        default:
+            cout << "Pilihan tidak valid!\n";
+        }
     }
 
-    //BankCustomer customer1(1, "Alice", 1000.0);
-    //Buyer buyer1(1, customer1.getName(), customer1);
-    return 1;
+    for (auto acc : bankAccounts) delete acc;
+    for (auto b : buyers) delete b;
+    for (auto s : sellers) delete s;
+
+    cout << "Program selesai." << endl;
+    return 0;
 }
