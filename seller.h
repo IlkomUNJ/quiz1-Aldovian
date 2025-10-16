@@ -3,52 +3,21 @@
 #include "item.h"
 #include <string>
 #include <vector>
+#include <iostream>
+using namespace std;
 
-class seller : public Buyer {
-
+class Seller : public Buyer {
 private:
-    // Add seller-specific private members here
     int sellerId;
-    std::string sellerName;
-    bool idDisplayed(int itemId) const {
-        // Example implementation, can be customized
-        return itemId > 0; // Assuming valid IDs are positive integers
-    }
-
-    vector<Item> items; // Assuming seller has a collection of items
-
+    string sellerName;
+    vector<Item> items;
 
 public:
-    seller() = default;
+    Seller(Buyer buyer, int sellerId, const string& sellerName)
+        : Buyer(buyer.getId(), buyer.getName(), buyer.getAccount()),
+          sellerId(sellerId), sellerName(sellerName) {}
 
-    seller(Buyer buyer, int sellerId, const std::string& sellerName)
-        : Buyer(buyer.getId(), buyer.getName(), buyer.getAccount()), sellerId(sellerId), sellerName(sellerName) {
-            Buyer::setId(buyer.getId());
-        }
-
-    virtual ~seller() = default;
-
-    void addNewItem(int newId, const std::string& newName, int newQuantity, double newPrice) {
-        Item newItem(newId, newName, newQuantity, newPrice);
-        items.push_back(newItem);
-    }
-
-    void updateItem(int itemId, const std::string& newName, int newQuantity, double newPrice) {
-        for (auto& item : items) {
-            if (item.getId() == itemId) {
-                item.alterItemById(itemId, newName, newQuantity, newPrice); // Assuming alterItemById is a method
-            }
-        }
-    }
-
-    void makeItemVisibleToCustomer(int itemId) {
-        for (auto& item : items) {
-            if (item.getId() == itemId) {
-                item.setDisplay(true); // Assuming setDisplay is a method in Item class
-                break;
-            }
-        }
-    }
-
-    // Add seller-specific members here
+    void addNewItem(int newId, const string& newName, int newQuantity, double newPrice);
+    void updateItem(int itemId, const string& newName, int newQuantity, double newPrice);
+    void showInventory() const;
 };
