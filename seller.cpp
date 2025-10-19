@@ -1,3 +1,5 @@
+// hw1
+
 #include "seller.h"
 
 void Seller::addNewItem(int newId, const string& newName, int newQuantity, double newPrice) {
